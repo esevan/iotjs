@@ -1,5 +1,28 @@
 ## Module: net
 
+### Platform Support
+
+The following shows net module APIs available for each platform.
+
+|  | Linux<br/>(Ubuntu) | Raspbian<br/>(Raspberry Pi) | Nuttx<br/>(STM32F4-Discovery) |
+| :---: | :---: | :---: | :---: |
+| net.createServer | O | O | O |
+| net.connect | O | O | O |
+| net.createConnection | O | O | O |
+| net.Server.listen | O | O | O |
+| net.Server.close | O | O | O |
+| net.Socket.connect | O | O | O |
+| net.Socket.write | O | O | O |
+| net.Socket.end | O | O | O |
+| net.Socket.destroy | O | O | O |
+| net.Socket.pause | O | O | O |
+| net.Socket.resume | O | O | O |
+| net.Socket.setTimeout | O | O | O |
+| net.Socket.setKeepAlive | X | X | X |
+
+※ When writable stream is finished but readable stream is still alive, IoT.js tries to shutdown the socket, not destroy.
+However on `nuttx` due to lack of implementation, it does nothing inside.
+
 IoT.js provides asynchronous networking through Net module.
 
 You can use this module with `require('net')` and create both servers and clients.
@@ -17,12 +40,12 @@ Creates a TCP server according to `options`.
 
 #### net.connect(options[, connectListener])
 #### net.connect(port[, host][, connectListener])
-#### net.createConnection(options[, connectnListener])
-#### net.createConnnection(port[, host][, connectListener])
+#### net.createConnection(options[, connectListener])
+#### net.createConnection(port[, host][, connectListener])
 * `options: Object`
 * `port: Number`
 * `host: String`, Default: `localhost`
-* `connectListner: Function()`
+* `connectListener: Function()`
 
 Creates a `net.Socket` and connects to the supplied host.
 
@@ -44,35 +67,42 @@ You can create `net.Server` instance with `net.createServer()`.
 * `backlog: Number`
 * `listenListener: Function()`
 
-Start listening and accepting connections on specified port and host.
+Starts listening and accepting connections on specified port and host.
 
 
 #### server.close([closeListener])
 
 * `closeListener: Function()`
 
-Stop listening new arriving connection.
+Stops listening new arriving connection.
 
 Server socket will finally close when all existing connections are closed, then emit 'close' event.
 
 `closeListener` is registered as `close` event listener.
 
-### Event
+### Events
 
 #### `'listening'`
-Emittied when server has been started listening.
+* `callback: Function()`
+
+Emitted when server has been started listening.
 
 #### `'connection(socket)'`
-* `socket: net.Socket`
+* `callback: Function(socket)`
+ * `socket: net.Socket`
 
 Emitted when new connection is established.
 
 #### `'close'`
+* `callback: Function()`
+
 Emitted when server closed.
 
 Note that this event will be emitted after all existing connections are closed.
 
 #### `'error'`
+* `callback: Function()`
+
 Emitted when an error occurs.
 
 ***
@@ -105,7 +135,7 @@ Opens the connection with supplied port and host.
 * `port: Number` - port connect to (required)
 * `host: String` - host connect to (optional, default: `'127.0.0.1'`)
 
-`connectionListner` is automatically registered as `connect` event listener which will be emitted when the connection is established.
+`connectionListener` is automatically registered as `connect` event listener which will be emitted when the connection is established.
 
 #### socket.write(data[, callback])
 
@@ -119,7 +149,7 @@ Sends `data` on the socket.
 #### socket.end([data][, callback])
 
 * `data: String | Buffer`
-* `callback: Funciton()`
+* `callback: Function()`
 
 Half-closes the socket.
 
@@ -153,45 +183,52 @@ If the socket is inactive for `timeout` milliseconds, `'timeout'` event will emi
 #### socket.setKeepAlive([enable][, initialDelay])
 
 * `enable: Boolean`
-* `initilalDelay: Number`, Default: `0`
+* `initialDelay: Number`, Default: `0`
 
 Enables or disables keep-alive functionality.
 
 ### Events
 
-#### `'lookup(err, address, family)'`
-* `err: Error | Null`
-* `address: String`
-* `family: String | Null`
+#### `'lookup'`
+* `callback: Function(err, address, family)`
+ * `err: Error | Null`
+ * `address: String`
+ * `family: String | Null`
 
 Emitted after resolving hostname.
 
 #### `'connect'`
+* `callback: Function()`
 
 Emitted after connection is established.
 
-#### `'data(data)'`
-* data: Buffer | String
+#### `'data'`
+* `callback: Function(data)`
+ * `data: Buffer | String`
 
 Emitted when data is received from the connection.
 
 #### `'drain'`
+* `callback: Function()`
 
 Emitted when the write buffer becomes empty.
 
 #### `'end'`
+* `callback: Function()`
 
 Emitted when FIN packet received.
 
 #### `'timeout'`
+* `callback: Function()`
 
 Emitted when the connection remains idle for specified timeout.
 
 #### `'close'`
+* `callback: Function()`
 
 Emitted when the socket closed.
 
 #### `'error'`
+* `callback: Function()`
 
 Emitted when an error occurs.
-

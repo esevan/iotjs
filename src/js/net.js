@@ -1,4 +1,4 @@
-/* Copyright 2015 Samsung Electronics Co., Ltd.
+/* Copyright 2015-2016 Samsung Electronics Co., Ltd.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -224,6 +224,20 @@ Socket.prototype.setKeepAlive = function(enable, delay) {
 };
 
 
+Socket.prototype.address = function() {
+  if (!this._handle || !this._handle.getsockname) {
+    return {};
+  }
+  if (!this._sockname) {
+    var out = {};
+    var err = this._handle.getsockname(out);
+    if (err) return {};  // FIXME(bnoordhuis) Throw?
+    this._sockname = out;
+  }
+  return this._sockname;
+};
+
+
 Socket.prototype.setTimeout = function(msecs, callback) {
   var self = this;
 
@@ -361,7 +375,28 @@ function onread(socket, nread, isEOF, buffer) {
     var err = new Error('read error: ' + nread);
     stream.Readable.prototype.error.call(socket, err);
   } else if (nread > 0) {
-    stream.Readable.prototype.push.call(socket, buffer);
+    if (process.platform  != 'nuttx') {
+      stream.Readable.prototype.push.call(socket, buffer);
+      return;
+    }
+
+    var str = buffer.toString();
+    var eofNeeded = false;
+    if (str.length >= 6
+      && str.substr(str.length - 6, str.length) == '\\e\\n\\d') {
+      eofNeeded  = true;
+      buffer = buffer.slice(0, str.length - 6);
+    }
+
+    if (str.length == 6 && eofNeeded) {
+      // Socket.prototype.end with no argument
+    } else {
+      stream.Readable.prototype.push.call(socket, buffer);
+    }
+
+    if (eofNeeded) {
+      onread(socket, 0, true, null);
+    }
   }
 }
 
@@ -477,6 +512,18 @@ Server.prototype.listen = function() {
       self.emit('listening');
     }
   });
+};
+
+
+Server.prototype.address = function() {
+  if (this._handle && this._handle.getsockname) {
+    var out = {};
+    this._handle.getsockname(out);
+    // TODO(bnoordhuis) Check err and throw?
+    return out;
+  }
+
+  return null;
 };
 
 
@@ -598,4 +645,3 @@ exports.connect = exports.createConnection = function() {
 
 module.exports.Socket = Socket;
 module.exports.Server = Server;
-

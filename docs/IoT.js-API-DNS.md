@@ -1,6 +1,17 @@
 ## Module: dns
 
-IoT.js provides dns module
+### Platform Support
+
+The following shows dns module APIs available for each platform.
+
+|  | Linux<br/>(Ubuntu) | Raspbian<br/>(Raspberry Pi) | Nuttx<br/>(STM32F4-Discovery) |
+| :---: | :---: | :---: | :---: |
+| dns.lookup | O | O | X |
+
+※ dns.lookup on `nuttx` works but due to lack of `nuttx` implementation, internally it only allows valid `ip4` address,
+but we are going to support `ip6` address, soon.
+
+IoT.js provides dns module.
 
 ### Methods
 
@@ -9,17 +20,4 @@ IoT.js provides dns module
 * `options: Object | Number`
 * `callback: Function(err: Error, address: String, family: Number)`
 
-Resolves a hostname into the first found A (IPv4) or AAAA (IPv6) record. 
-
-#### dns.resolve(hostname[, rrtype], callback)
-* `hostname: String`
-* `rrtype: String`
-* `callback: Function(err: Error, addresses: [String])`
-
-Resolves a hostname into an array of all records.
-
-#### dns.reverse(ip, callback)
-* `ip: String`
-* `callback: Function(err: Error, addresses: [String])`
-
-Inverse of `dns.resolve()`. Resolves an ip address into an array of all hostnames.
+Resolves a hostname into the first found A (IPv4) or AAAA (IPv6) record.

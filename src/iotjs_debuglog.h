@@ -1,4 +1,4 @@
-/* Copyright 2015 Samsung Electronics Co., Ltd.
+/* Copyright 2015-2016 Samsung Electronics Co., Ltd.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -22,21 +22,21 @@
 #include <stdio.h>
 
 extern int iotjs_debug_level;
-extern FILE *iotjs_log_stream;
+extern FILE* iotjs_log_stream;
 extern const char* iotjs_debug_prefix[4];
 
-#define DBGLEV_ERR  1
+#define DBGLEV_ERR 1
 #define DBGLEV_WARN 2
 #define DBGLEV_INFO 3
 
-#define IOTJS_DLOG(lvl, ...) \
-  do { \
+#define IOTJS_DLOG(lvl, ...)                                        \
+  do {                                                              \
     if (0 <= lvl && lvl <= iotjs_debug_level && iotjs_log_stream) { \
-      fprintf(iotjs_log_stream, "[%s] ", iotjs_debug_prefix[lvl]); \
-      fprintf(iotjs_log_stream, __VA_ARGS__); \
-      fprintf(iotjs_log_stream, "\n"); \
-      fflush(iotjs_log_stream); \
-    } \
+      fprintf(iotjs_log_stream, "[%s] ", iotjs_debug_prefix[lvl]);  \
+      fprintf(iotjs_log_stream, __VA_ARGS__);                       \
+      fprintf(iotjs_log_stream, "\n");                              \
+      fflush(iotjs_log_stream);                                     \
+    }                                                               \
   } while (0)
 #define DLOG(...) IOTJS_DLOG(DBGLEV_ERR, __VA_ARGS__)
 #define DDLOG(...) IOTJS_DLOG(DBGLEV_WARN, __VA_ARGS__)
@@ -57,11 +57,9 @@ extern const char* iotjs_debug_prefix[4];
 
 #endif /* ENABLE_DEBUG_LOG */
 
-namespace iotjs {
 
-void InitDebugSettings();
-void ReleaseDebugSettings();
+void init_debug_settings();
+void release_debug_settings();
 
-}
 
 #endif /* IOTJS_DEBUGLOG_H */

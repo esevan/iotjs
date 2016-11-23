@@ -15,22 +15,19 @@
 cmake_minimum_required(VERSION 2.8)
 
 set(CC ${CMAKE_C_COMPILER})
-set(CXX ${CMAKE_CXX_COMPILER})
 
 
 # common compile flags
-set(CFLAGS_COMMON "${CFLAGS_COMMON} -fpermissive")
-set(CFLAGS_COMMON "${CFLAGS_COMMON} -fno-rtti")
 set(CFLAGS_COMMON "${CFLAGS_COMMON} -s")
+set(CFLAGS_COMMON "${CFLAGS_COMMON} -g")
 set(CFLAGS_COMMON "${CFLAGS_COMMON} -Wl,-Map=iotjstuv.map")
-set(CFLAGS_COMMON "${CFLAGS_COMMON} -Werror")
-
-set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++11")
-set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -fno-exceptions")
-
+set(CFLAGS_COMMON "${CFLAGS_COMMON} -Wall -Wextra -Werror")
+set(CFLAGS_COMMON "${CFLAGS_COMMON} -Wno-unused-parameter")
+set(CFLAGS_COMMON "${CFLAGS_COMMON} -Wno-unused-variable")
+set(CFLAGS_COMMON "${CFLAGS_COMMON} -Wno-missing-field-initializers")
+set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -std=gnu99")
 
 set(IOTJS_CFLAGS "${IOTJS_CFLAGS} ${CFLAGS_COMMON}")
-set(IOTJS_CFLAGS "${IOTJS_CFLAGS} ${CMAKE_CXX_FLAGS}")
 set(IOTJS_LINK_FLAGS "${CMAKE_EXE_LINKER_FLAGS}")
 
 

@@ -1,4 +1,4 @@
-/* Copyright 2015 Samsung Electronics Co., Ltd.
+/* Copyright 2015-2016 Samsung Electronics Co., Ltd.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,16 +17,7 @@
 #define IOTJS_EXCEPTION_H
 
 
-#include "iotjs_binding.h"
-
-
-namespace iotjs {
-
-
-JObject CreateUVException(int errorno, const char* syscall);
-
-
-} // namespace iotjs
+iotjs_jval_t iotjs_create_uv_exception(int errorno, const char* syscall);
 
 
 #endif /* IOTJS_EXCEPTION_H */

@@ -1,4 +1,4 @@
-# Copyright 2015 Samsung Electronics Co., Ltd.
+# Copyright 2015-2016 Samsung Electronics Co., Ltd.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -14,8 +14,37 @@
 
 cmake_minimum_required(VERSION 2.8)
 
-file(GLOB LIB_IOTJS_SRC ${SRC_ROOT}/*.cpp
-                        ${SRC_ROOT}/platform/${PLATFORM_DESCRIPT}/*.cpp)
+# Module Configuration - listup all possible modules
+file(GLOB IOTJS_MODULES_ALL ${CMAKE_SOURCE_DIR}/src/module/*.c)
+separate_arguments(IOTJS_MODULES_ALL)
+foreach(module ${IOTJS_MODULES_ALL})
+    get_filename_component(IOTJS_MODULENAME ${module} NAME_WE)
+    string(SUBSTRING ${IOTJS_MODULENAME} 13 -1 IOTJS_MODULENAME)
+    string(TOUPPER ${IOTJS_MODULENAME} IOTJS_MODULENAME)
+    set(IOTJS_CFLAGS "${IOTJS_CFLAGS} -DENABLE_MODULE_${IOTJS_MODULENAME}=0")
+endforeach()
+
+# Module Configuration - enable only selected modules
+set(IOTJS_MODULE_SRC "")
+separate_arguments(IOTJS_MODULES)
+foreach(module ${IOTJS_MODULES})
+    list(APPEND IOTJS_MODULE_SRC ${SRC_ROOT}/module/iotjs_module_${module}.c)
+    set(PLATFORM_SRC "${SRC_ROOT}/platform/${PLATFORM_DESCRIPT}/iotjs_module")
+    set(PLATFORM_SRC "${PLATFORM_SRC}_${module}-${PLATFORM_DESCRIPT}.c")
+    if(EXISTS "${PLATFORM_SRC}")
+        list(APPEND IOTJS_MODULE_SRC ${PLATFORM_SRC})
+    endif()
+    string(TOUPPER ${module} module)
+    set(IOTJS_CFLAGS "${IOTJS_CFLAGS} -UENABLE_MODULE_${module}")
+    set(IOTJS_CFLAGS "${IOTJS_CFLAGS} -DENABLE_MODULE_${module}=1")
+endforeach()
+
+if(${CMAKE_SYSTEM_NAME} MATCHES "Linux")
+    list(APPEND IOTJS_MODULE_SRC ${SRC_ROOT}/platform/iotjs_*-linux.c)
+endif()
+
+file(GLOB LIB_IOTJS_SRC ${SRC_ROOT}/*.c
+                        ${IOTJS_MODULE_SRC})
 
 string(REPLACE ";" " " IOTJS_CFLAGS_STR "${IOTJS_CFLAGS}")
 string(REPLACE ";" " " IOTJS_LINK_FLAGS_STR "${IOTJS_LINK_FLAGS}")
@@ -45,7 +74,7 @@ endfunction()
 BuildLibIoTjs()
 
 
-set(SRC_MAIN ${ROOT}/iotjs_linux.cpp)
+set(SRC_MAIN ${ROOT}/iotjs_linux.c)
 
 set(BIN_IOTJS_CFLAGS ${IOTJS_CFLAGS_STR})
 set(BIN_IOTJS_LINK_FLAGS ${IOTJS_LINK_FLAGS_STR})

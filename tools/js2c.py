@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 
-# Copyright 2015 Samsung Electronics Co., Ltd.
+# Copyright 2015-2016 Samsung Electronics Co., Ltd.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -14,16 +14,20 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 #
-#  This file converts src/js/iotjs.js to a C-array in include/iotjs_js.h file
+#  This file converts src/js/*.js to a C-array in src/iotjs_js.[h|c] file.
+# And this file also generates magic string list in src/iotjs_string_ext.inl.h
+# file to reduce JerryScript heap usage.
 
 import sys
 import glob
 import os
 import re
 import subprocess
+import struct
 
-def extractName(path):
-    return os.path.splitext(os.path.basename(path))[0]
+from common_py.system.filesystem import FileSystem as fs
+from common_py import path
+
 
 def writeLine(fo, content, indent=0):
     buf = '  ' * indent
@@ -31,24 +35,55 @@ def writeLine(fo, content, indent=0):
     buf += '\n'
     fo.write(buf)
 
+
 def regroup(l, n):
-    return [ l[i:i+n] for i in range(0, len(l), n) ]
+    return [l[i:i+n] for i in range(0, len(l), n)]
+
 
 def removeComments(code):
     pattern = r'(\".*?\"|\'.*?\')|(/\*.*?\*/|//[^\r\n]*$)'
     regex = re.compile(pattern, re.MULTILINE | re.DOTALL)
+
     def _replacer(match):
         if match.group(2) is not None:
             return ""
         else:
             return match.group(1)
+
     return regex.sub(_replacer, code)
+
 
 def removeWhitespaces(code):
     return re.sub('\n+', '\n', re.sub('\n +', '\n', code))
 
 
-LICENSE = '''/* Copyright 2015 Samsung Electronics Co., Ltd.
+def parseLiterals(code):
+    JERRY_SNAPSHOT_VERSION = 6
+
+    literals = set()
+
+    header = struct.unpack('IIII', code[0:16])
+    if header[0] != JERRY_SNAPSHOT_VERSION :
+        print ('Please check jerry snapshot version (Last confirmed: %d)'
+               % JERRY_SNAPSHOT_VERSION)
+        exit(1)
+
+    code_ptr = header[1] + 8
+    while code_ptr < len(code):
+        length = struct.unpack('H', code[code_ptr : code_ptr + 2])[0]
+        code_ptr = code_ptr + 2
+        if length == 0:
+            continue
+        if (length < 32):
+            item = struct.unpack('%ds' % length,
+                                 code[code_ptr : code_ptr + length])
+            literals.add(item[0])
+        code_ptr = code_ptr + length + (length % 2)
+
+    return literals
+
+
+LICENSE = '''/* Copyright 2015-2016 Samsung Electronics Co., Ltd.
  *
  * Licensed under the Apache License, Version 2.0 (the \"License\");
  * you may not use this file except in compliance with the License.
@@ -69,53 +104,60 @@ LICENSE = '''/* Copyright 2015 Samsung Electronics Co., Ltd.
 
 HEADER1 = '''#ifndef IOTJS_JS_H
 #define IOTJS_JS_H
-namespace iotjs {
 '''
 
-FOOTER1 = '''}
+FOOTER1 = '''
 #endif
 '''
 
 HEADER2 = '''#include <stdio.h>
 #include "iotjs_js.h"
-namespace iotjs {
 '''
 
-FOOTER2 = '''}
+FOOTER2 = '''
 '''
 
-SRC_PATH = '../src/'
-JS_PATH = SRC_PATH + 'js/'
-DUMPER = ""
+HEADER3 = '''
+#define JERRY_MAGIC_STRING_ITEMS \\
+  \\
+'''
 
-# argument processing
-buildtype = 'debug'
-no_snapshot = False
-if len(sys.argv) >= 2:
-    buildtype = sys.argv[1]
-    no_snapshot = True if sys.argv[2] == 'no_snapshot' else False
-    DUMPER = sys.argv[3]
+FOOTER3 = '''
+'''
 
-fout_h = open(SRC_PATH + 'iotjs_js.h', 'w')
-fout_cpp = open(SRC_PATH + 'iotjs_js.cpp', 'w')
-fout_h.write(LICENSE);
-fout_h.write(HEADER1);
-fout_cpp.write(LICENSE);
-fout_cpp.write(HEADER2);
+NATIVE_STRUCT1 = '''
+typedef struct {
+  const char* name;
+  const void* code;
+  const int length;
+} iotjs_js_module;
 
-files = glob.glob(JS_PATH + '*.js')
-for path in files:
-    name = extractName(path)
-    fout_cpp.write('const char ' + name + '_n [] = "' + name + '";\n')
-    fout_h.write('extern const char ' + name + '_n [];\n')
-    fout_h.write('extern const int ' + name + '_l;\n')
-    if no_snapshot == True:
-        fout_h.write('extern const char ' + name + '_s [];\n')
-        fout_cpp.write('const char ' + name + '_s [] = {\n')
-        code = open(path, 'r').read() + '\0'
+extern const iotjs_js_module natives[];
+'''
+
+NATIVE_STRUCT2 = '''
+const iotjs_js_module natives[] = {
+'''
+
+DUMPER = ''
+NO_SNAPSHOT = True
+BUILDTYPE = 'debug'
+MAGIC_STRING_SET = { 'process' }
+
+def printJSContents(fout_c, name, indent = 0):
+
+    global DUMPER
+    global NO_SNAPSHOT
+    global BUILDTYPE
+    global MAGIC_STRING_SET
+
+    js_path = fs.join(path.SRC_ROOT, 'js', name + '.js')
+
+    if NO_SNAPSHOT is True:
+        code = open(js_path, 'r').read() + '\0'
 
         # minimize code when release mode
-        if buildtype != 'debug':
+        if BUILDTYPE != 'debug':
             code = removeComments(code)
             code = removeWhitespaces(code)
 
@@ -123,81 +165,103 @@ for path in files:
             buf = ', '.join(map(lambda ch: str(ord(ch)), line))
             if line[-1] != '\0':
                 buf += ','
-            writeLine(fout_cpp, buf, 1)
+            writeLine(fout_c, buf, indent)
 
-        writeLine(fout_cpp, '};')
-        writeLine(fout_cpp,
-                  'const int ' + name + '_l = ' + str(len(code)-1) + ';')
+        length = len(code) - 1
 
     else:
-        fout_h.write('extern const unsigned char ' + name + '_s [];\n')
-        fout_cpp.write('const unsigned char ' + name + '_s [] = {\n')
-
-        fmodule = open(path, 'r')
+        fmodule = open(js_path, 'r')
         module = fmodule.read()
         fmodule.close()
 
-        fmodule_wrapped = open(path + '.wrapped', 'w')
-        # FIXME
+        fmodule_wrapped = open(js_path + '.wrapped', 'w')
         if name != 'iotjs':
-            #fmodule_wrapped.write ("(function (a, b, c) {\n")
-            fmodule_wrapped.write (
-                "(function(exports, require, module) {\n");
+            # fmodule_wrapped.write ("(function (a, b, c) {\n")
+            fmodule_wrapped.write(
+                "(function(exports, require, module) {\n")
 
-        fmodule_wrapped.write (module)
+        fmodule_wrapped.write(module)
 
         if name != 'iotjs':
-            fmodule_wrapped.write ("});\n");
-            #fmodule_wrapped.write ("wwwwrap(a, b, c); });\n")
+            fmodule_wrapped.write("});\n")
+            # fmodule_wrapped.write ("wwwwrap(a, b, c); });\n")
         fmodule_wrapped.close()
 
-        # FIXME
         ret = subprocess.call([DUMPER,
                                '--save-snapshot-for-eval',
-                               path + '.snapshot',
-                               path + '.wrapped'])
+                               js_path + '.snapshot',
+                               js_path + '.wrapped'])
         if ret != 0:
-            msg = 'Failed to dump ' + path + (": - %d]" % (ret))
+            msg = 'Failed to dump ' + js_path + (": - %d]" % (ret))
             print "%s%s%s" % ("\033[1;31m", msg, "\033[0m")
             exit(1)
 
-        code = open(path + '.snapshot', 'r').read()
+        code = open(js_path + '.snapshot', 'r').read()
 
-        os.remove (path + '.wrapped')
-        os.remove (path + '.snapshot')
+        fs.remove(js_path + '.wrapped')
+        fs.remove(js_path + '.snapshot')
 
         for line in regroup(code, 8):
-            buf = ', '.join(map(lambda ch: "0x{:02x}".format(ord(ch)), line))
+            buf = ', '.join(map(lambda ch: "0x{:02x}".format(ord(ch)),
+                                line))
             buf += ','
-            writeLine(fout_cpp, buf, 1)
-        writeLine(fout_cpp, '};')
-        writeLine(fout_cpp,
-                  'const int ' + name + '_l = sizeof (' + name + '_s);')
+            writeLine(fout_c, buf, indent)
+
+        length = len(code)
+
+        MAGIC_STRING_SET = MAGIC_STRING_SET | parseLiterals(code)
+
+    return length
 
 
+def js2c(buildtype, no_snapshot, js_modules, js_dumper):
+    global DUMPER
+    DUMPER = js_dumper
 
-NATIVE_STRUCT1 = '''
-struct native_mod {
-const char* name;
-const void* code;
-const size_t length;
-};
+    global NO_SNAPSHOT
+    NO_SNAPSHOT = no_snapshot
 
-extern const struct native_mod natives[];
-'''
+    global BUILDTYPE
+    BUILDTYPE = buildtype
 
-NATIVE_STRUCT2 = '''
-__attribute__ ((used)) const struct native_mod natives[] = {
-'''
+    fout_h = open(fs.join(path.SRC_ROOT, 'iotjs_js.h'), 'w')
+    fout_c = open(fs.join(path.SRC_ROOT, 'iotjs_js.c'), 'w')
+    fout_magic_str = open(fs.join(path.SRC_ROOT, 'iotjs_string_ext.inl.h'), 'w')
 
-fout_h.write(NATIVE_STRUCT1)
-fout_cpp.write(NATIVE_STRUCT2)
-filenames = map(extractName, files)
-for name in filenames:
-    writeLine(fout_cpp,
-              '{ ' + name + '_n, ' + name + '_s, ' + name + '_l },', 1)
-writeLine(fout_cpp, '{ NULL, NULL, 0 }', 1)
-writeLine(fout_cpp, '};')
+    fout_h.write(LICENSE)
+    fout_h.write(HEADER1)
+    fout_c.write(LICENSE)
+    fout_c.write(HEADER2)
+    fout_magic_str.write(LICENSE)
+    fout_magic_str.write(HEADER3)
 
-fout_h.write(FOOTER1)
-fout_cpp.write(FOOTER2)
+    for name in sorted(js_modules):
+        writeLine(fout_h, 'extern const char ' + name + '_n[];')
+        writeLine(fout_h, 'extern const char ' + name + '_s[];')
+        writeLine(fout_h, 'extern const int ' + name + '_l;')
+
+        writeLine(fout_c, 'const char ' + name + '_n[] = "' + name + '";')
+        writeLine(fout_c, 'const char ' + name + '_s[] = {')
+        length = printJSContents(fout_c, name, 1)
+        writeLine(fout_c, '};');
+        writeLine(fout_c, '#define SIZE_%s %d' % (name.upper(), length))
+        writeLine(fout_c, 'const int %s_l = SIZE_%s;' % (name, name.upper()))
+
+    fout_h.write(NATIVE_STRUCT1)
+    fout_c.write(NATIVE_STRUCT2)
+
+    for name in sorted(js_modules):
+        writeLine(fout_c,
+                  '{ %s_n, %s_s, SIZE_%s },' % (name, name, name.upper()), 1)
+    writeLine(fout_c, '{ NULL, NULL, 0 }', 1)
+    writeLine(fout_c, '};')
+
+    fout_h.write(FOOTER1)
+    fout_c.write(FOOTER2)
+
+    global MAGIC_STRING_SET
+    for idx, magic_string in enumerate(sorted(MAGIC_STRING_SET)):
+        fout_magic_str.write('  MAGICSTR_EX_DEF(MAGIC_STR_%d, "%s") \\\n'
+                             % (idx, repr(magic_string)[1:-1]))
+
+    fout_magic_str.write(FOOTER3)

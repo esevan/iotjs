@@ -1,7 +1,51 @@
 ## Class: fs
 
+### Platform Support
+
+The following shows fs module APIs available for each platform.
+
+|  | Linux<br/>(Ubuntu) | Raspbian<br/>(Raspberry Pi) | Nuttx<br/>(STM32F4-Discovery) |
+| :---: | :---: | :---: | :---: |
+| fs.close | O | O | O |
+| fs.closeSync | O | O | O |
+| fs.open | O | O | O |
+| fs.openSync | O | O | O |
+| fs.read | O | O | O |
+| fs.readSync | O | O | O |
+| fs.readDir | O | O | X |
+| fs.readDirSync | O | O | X |
+| fs.readFile | O | O | O |
+| fs.readFileSync | O | O | O |
+| fs.rename | O | O | O |
+| fs.renameSync | O | O | O |
+| fs.stat | O | O | O |
+| fs.statSync | O | O | O |
+| fs.fstat | O | O | O |
+| fs.fstatSync | O | O | O |
+| fs.write | O | O | O |
+| fs.writeSync | O | O | O |
+| fs.writeFile | O | O | O |
+| fs.writeFileSync | O | O | O |
+| fs.unlink | O | O | O |
+| fs.unlinkSync | O | O | O |
+
+※ On `nuttx` path should be passed with a form of **absolute path**.
 
 ### Methods
+
+#### fs.close(fd, callback)
+
+* `fd: Int` - file descriptor.
+* `callback: Function(err) `
+ * `err: Error`
+
+Closes the file of fd asynchronously.
+
+#### fs.closeSync(fd)
+
+* `fd: Int` - file descriptor.
+
+Closes the file of fd synchronously.
 
 #### fs.open(path, flags[, mode], callback)
 
@@ -30,14 +74,13 @@
  * `bytesRead: Number`
  * `buffer: Buffer`
 
-#### fs.readSync(fd, buffer, offset, length, position, callback)
+#### fs.readSync(fd, buffer, offset, length, position)
 
 * `fd: Int` - file descriptor.
 * `buffer: Buffer` - buffer that the data will be written to.
 * `offset: Number` - offset of the buffer where to start writing.
 * `length: Number` - number of bytes to read.
 * `position: Number` - specifying where to start read data from the file, if `null`, read from current position.
-
 
 #### fs.readFile(path[, options], callback)
 
@@ -49,47 +92,32 @@
  * `err: Error`
  * `data: Buffer`
 
-Asynchronously read entire file.
+Reads entire file asynchronously.
 
-#### fs.readFileSync(path[, options], callback)
+#### fs.readFileSync(path[, options])
 
 * `path: String` - file path to be opened.
 * `options: Object` - options for the operation.
  * `encoding: String`, Default: `null` - encoding of the file.
  * `flag: String`, Default: `r` - file open flag.
 
-synchronously read entire file.
+Reads entire file synchronously.
 
-#### fs.write(fd, buffer, offset, length, position, callback) 
+#### fs.rename(oldPath, newPath, callback)
 
-* `fd: Int` - file descriptor.
-* `buffer: Buffer` - buffer that the data will be written from.
-* `offset: Number` - offset of the buffer where from start reading.
-* `length: Number` - number of bytes to write.
-* `position: Number` - specifying where to start write data to the file, if `null`, read from current position.
-* callback: Function(err, byteWrite)` - callback function.
+* `oldPath: String` - old file path
+* `newPath: String` - new file path
+* `callback: Function(err)` - callback function.
  * `err: Error`
- * `byteWrite: Int`
 
-#### fs.writeSync(fd, buffer, offset, length, position) 
+Renames `oldPath` to `newPath` asynchronously.
 
-* `fd: Int` - file descriptor.
-* `buffer: Buffer` - buffer that the data will be written from.
-* `offset: Number` - offset of the buffer where from start reading.
-* `length: Number` - number of bytes to write.
-* `position: Number` - specifying where to start write data to the file, if `null`, read from current position.
+#### fs.renameSync(oldPath, newPath)
 
-#### fs.close(fd, callback)
+* `oldPath: String` - old file path
+* `newPath: String` - new file path
 
-* `fd: Int` - file descriptor.
-
-Close the file of fd asynchronously.
-
-#### fs.closeSync(fd)
-
-* `fd: Int` - file descriptor.
-
-Close the file of fd synchronously.
+Renames `oldPath` to `newPath` synchronously.
 
 #### fs.stat(path, callback)
 
@@ -113,16 +141,67 @@ Close the file of fd synchronously.
 
 * `fd: Number` - file descriptor to be stated
 
-## Class: fs.Stats
+ ### Class: fs.Stats
 
-fs.Stats class is a object returned from ```fs.stats()```,```fs.fstats()``` and their synchronous counterparts.
+ fs.Stats class is a object returned from ```fs.stats()```,```fs.fstats()``` and their synchronous counterparts.
 
-### Methods
+ ### Methods
 
-#### stats.isDirectory()
+ #### stats.isDirectory()
 
-return true if stated file is a directory
+ Returns true if stated file is a directory
 
-#### stats.isFile()
+ #### stats.isFile()
 
-return true if stated file is a file
+ Returns true if stated file is a file
+
+#### fs.write(fd, buffer, offset, length, position, callback)
+
+* `fd: Int` - file descriptor.
+* `buffer: Buffer` - buffer that the data will be written from.
+* `offset: Number` - offset of the buffer where from start reading.
+* `length: Number` - number of bytes to write.
+* `position: Number` - specifying where to start write data to the file, if `null`, read from current position.
+* callback: Function(err, bytesWrite)` - callback function.
+ * `err: Error`
+ * `byteWrite: Int`
+
+#### fs.writeSync(fd, buffer, offset, length, position)
+
+* `fd: Int` - file descriptor.
+* `buffer: Buffer` - buffer that the data will be written from.
+* `offset: Number` - offset of the buffer where from start reading.
+* `length: Number` - number of bytes to write.
+* `position: Number` - specifying where to start write data to the file, if `null`, read from current position.
+
+#### fs.writeFile(path, data, [, options], callback)
+
+* `path: String` - file path that the `data` will be written
+* `data: Buffer` - buffer that contains data
+* `options: Object` - options for the operation
+* `callback: Function(err)` - callback function
+ * `err: Error`
+
+Writes entire `data` to the file specified by `path` asynchronously.
+
+#### fs.writeFileSync(path, data, [, options])
+
+* `path: String` - file path that the `data` will be written
+* `data: Buffer` - buffer that contains data
+* `options: Object` - options for the operation
+
+Writes entire `data` to the file specified by `path` synchronously.
+
+#### fs.unlink(path, callback)
+
+* `path: String` - file path to be removed
+* `callback: Function(err) `
+ * `err: Error`
+
+Removes the file specified by `path` asynchronously.
+
+#### fs.unlinkSync(path)
+
+* `path: String` - file path to be removed
+
+Removes the file specified by `path` synchronously.

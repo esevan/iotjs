@@ -1,4 +1,4 @@
-/* Copyright 2015 Samsung Electronics Co., Ltd.
+/* Copyright 2015-2016 Samsung Electronics Co., Ltd.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -221,8 +221,8 @@ fs.readFile = function(path, callback) {
 
   var read = function() {
     // Read segment of data.
-    var buffer = new Buffer(1024);
-    fs.read(fd, buffer, 0, 1024, -1, afterRead);
+    var buffer = new Buffer(1023);
+    fs.read(fd, buffer, 0, 1023, -1, afterRead);
   };
 
   var afterRead = function(err, bytesRead, buffer) {
@@ -258,8 +258,8 @@ fs.readFileSync = function(path) {
 
   while (true) {
     try {
-      var buffer = new Buffer(1024);
-      var bytesRead = fs.readSync(fd, buffer, 0, 1024);
+      var buffer = new Buffer(1023);
+      var bytesRead = fs.readSync(fd, buffer, 0, 1023);
       if (bytesRead) {
         buffers.push(buffer.slice(0, bytesRead));
       } else {
@@ -272,6 +272,143 @@ fs.readFileSync = function(path) {
   fs.closeSync(fd);
 
   return Buffer.concat(buffers);
+};
+
+
+fs.writeFile = function(path, data, callback) {
+  checkArgString(path);
+  checkArgBuffer(data);
+  checkArgFunction(callback);
+
+  var fd;
+  var len;
+  var bytesWritten;
+
+  fs.open(path, 'w', function(err, _fd) {
+    if (err) {
+      return callback(err);
+    }
+
+    fd = _fd;
+    len = data.length;
+    bytesWritten = 0;
+
+    write();
+  });
+
+  var write = function() {
+    var tryN = (len - bytesWritten) >= 1024 ? 1023 : (len - bytesWritten);
+    fs.write(fd, data, bytesWritten, tryN, bytesWritten, afterWrite);
+  };
+
+  var afterWrite = function(err, n) {
+    if (err) {
+      fs.close(fd, function(err) {
+        return callback(err);
+      });
+    }
+
+    if (n <= 0 || bytesWritten + n == len) {
+      // End of data
+      fs.close(fd, function(err) {
+        callback(err);
+      });
+    } else {
+      // continue writing
+      bytesWritten += n;
+      write();
+    }
+  };
+};
+
+
+fs.writeFileSync = function(path, data) {
+  checkArgString(path);
+  checkArgBuffer(data);
+
+  var fd = fs.openSync(path, 'w');
+  var len = data.length;
+  var bytesWritten = 0;
+
+  while (true) {
+    try {
+      var tryN = (len - bytesWritten) >= 1024 ? 1023 : (len - bytesWritten);
+      var n = fs.writeSync(fd, data, bytesWritten, tryN, bytesWritten);
+      bytesWritten += n;
+      if (bytesWritten == len) {
+        break;
+      }
+    } catch (e) {
+      break;
+    }
+  }
+  fs.closeSync(fd);
+  return bytesWritten;
+};
+
+
+fs.mkdir = function(path, mode, callback) {
+  if (util.isFunction(mode)) callback = mode;
+  checkArgString(path, 'path');
+  checkArgFunction(callback, 'callback');
+  fsBuiltin.mkdir(path, convertMode(mode, 511), callback);
+};
+
+
+fs.mkdirSync = function(path, mode) {
+  return fsBuiltin.mkdir(checkArgString(path, 'path'),
+                         convertMode(mode, 511));
+};
+
+
+fs.rmdir = function(path, callback) {
+  checkArgString(path, 'path');
+  checkArgFunction(callback, 'callback');
+  fsBuiltin.rmdir(path, callback);
+};
+
+
+fs.rmdirSync = function(path) {
+  return fsBuiltin.rmdir(checkArgString(path, 'path'));
+};
+
+
+fs.unlink = function(path, callback) {
+  checkArgString(path);
+  checkArgFunction(callback);
+  fsBuiltin.unlink(path, callback);
+};
+
+
+fs.unlinkSync = function(path) {
+  return fsBuiltin.unlink(checkArgString(path, 'path'));
+};
+
+
+fs.rename = function(oldPath, newPath, callback) {
+  checkArgString(oldPath);
+  checkArgString(newPath);
+  checkArgFunction(callback);
+  fsBuiltin.rename(oldPath, newPath, callback);
+};
+
+
+fs.renameSync = function(oldPath, newPath) {
+  checkArgString(oldPath);
+  checkArgString(newPath);
+  fsBuiltin.rename(oldPath, newPath);
+};
+
+
+fs.readdir = function(path, callback) {
+  checkArgString(path);
+  checkArgFunction(callback);
+  fsBuiltin.readdir(path, callback);
+};
+
+
+fs.readdirSync = function(path) {
+  return fsBuiltin.readdir(checkArgString(path, 'path'));
 };
 
 

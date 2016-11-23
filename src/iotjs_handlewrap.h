@@ -1,4 +1,4 @@
-/* Copyright 2015 Samsung Electronics Co., Ltd.
+/* Copyright 2015-2016 Samsung Electronics Co., Ltd.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -23,7 +23,7 @@
 #include "iotjs_objectwrap.h"
 
 
-namespace iotjs {
+typedef void (*OnCloseHandler)(uv_handle_t*);
 
 
 // UV handle wrapper.
@@ -32,7 +32,7 @@ namespace iotjs {
 //  it after corresponding handle has closed. Hence the Javasciprt object will
 //  not turn into garbage untile the handle is open.
 
-// Javascirpt object
+// Javascript object
 //   ->
 // Create a handle wrap, initializing uv handle, increase ref count.
 //   ->
@@ -41,31 +41,32 @@ namespace iotjs {
 // Handle closed, release handle, decrease ref count.
 //   ->
 // The javascript object now can be reclaimed by GC.
-class HandleWrap : public JObjectWrap {
- public:
-  HandleWrap(JObject& jobject, /* Object that connect with the uv handle*/
-             uv_handle_t* handle);
 
-  virtual ~HandleWrap();
-
-  static HandleWrap* FromHandle(uv_handle_t* handle);
-
-  typedef void (*OnCloseHandler)(uv_handle_t*);
-
-  void Close(OnCloseHandler on_close_cb);
-
-  void OnClose();
-
- protected:
-  virtual void Destroy(void);
-
- protected:
-  uv_handle_t* __handle;
-  OnCloseHandler _on_close_cb;
-};
+typedef struct {
+  iotjs_jobjectwrap_t jobjectwrap;
+  uv_handle_t* handle;
+  OnCloseHandler on_close_cb;
+} IOTJS_VALIDATED_STRUCT(iotjs_handlewrap_t);
 
 
-} // namespace iotjs
+// jobject: Object that connect with the uv handle
+void iotjs_handlewrap_initialize(iotjs_handlewrap_t* handlewrap,
+                                 const iotjs_jval_t* jobject,
+                                 uv_handle_t* handle,
+                                 JFreeHandlerType jfreehandler);
+
+void iotjs_handlewrap_destroy(iotjs_handlewrap_t* handlewrap);
+
+void iotjs_handlewrap_close(iotjs_handlewrap_t* handlewrap,
+                            OnCloseHandler on_close_cb);
+
+iotjs_handlewrap_t* iotjs_handlewrap_from_handle(uv_handle_t* handle);
+iotjs_handlewrap_t* iotjs_handlewrap_from_jobject(const iotjs_jval_t* jobject);
+
+uv_handle_t* iotjs_handlewrap_get_uv_handle(iotjs_handlewrap_t* handlewrap);
+iotjs_jval_t* iotjs_handlewrap_jobject(iotjs_handlewrap_t* handlewrap);
+
+void iotjs_handlewrap_validate(iotjs_handlewrap_t* handlewrap);
 
 
 #endif /* IOTJS_HANDLEWRAP_H */

@@ -25,7 +25,7 @@ var dev_open = false;
 function GpioError(code, operation, message) {
   this.name = 'GpioError';
   this.code = code;
-  this.operation = operation
+  this.operation = operation;
   this.message = operation + ': ' + message;
 }
 
@@ -44,7 +44,7 @@ function CreateGpioError(operation, errno) {
       return new GpioError(errno, operation, 'GPIO not initialized');
     case gpio.kGpioErrWrongUse:
       return new GpioError(errno, operation, 'Wrong use of GPIO API');
-    case gpio.kGpioErrSysErr:
+    case gpio.kGpioErrSys:
       return new GpioError(errno, operation, 'System error');
   }
   return new GpioError(errno, operation, 'Unknown error');
@@ -82,7 +82,7 @@ GPIO.prototype.initialize = function(callback) {
       callback(err);
     }
 
-    // Emits event according to result.
+    // Emit event according to result.
     if (err) {
       self.emit('error', err);
     } else {
@@ -98,7 +98,7 @@ GPIO.prototype.initialize = function(callback) {
       process.nextTick(function() {
         callback(null);
       });
-    };
+    }
 
     return null;
   }
@@ -138,7 +138,7 @@ GPIO.prototype.release = function(callback) {
       callback(err);
     }
 
-    // Emits event according to result.
+    // Emit event according to result.
     if (err) {
       self.emit('error', err);
     } else {
@@ -151,14 +151,14 @@ GPIO.prototype.release = function(callback) {
 };
 
 
-// gpio.setPin(pinNumber, direction[, mode][, callback])
-// event: 'setpin'
-GPIO.prototype.setPin = function(pinNumber, direction, mode, callback) {
+// gpio.open(pinNumber, direction[, mode][, callback])
+// event: 'open'
+GPIO.prototype.open = function(pinNumber, direction, mode, callback) {
   var self = this;
 
   // Check initialized.
   if (!self._initialized) {
-    throw CreateGpioError('setPin', gpio.kGpioErrNotInitialized);
+    throw CreateGpioError('open', gpio.kGpioErrNotInitialized);
   }
 
   // Check arguments.
@@ -176,77 +176,85 @@ GPIO.prototype.setPin = function(pinNumber, direction, mode, callback) {
     mode = 'none';
   }
 
+  if (pinNumber < 0) {
+    throw new Error('Invalid pinNumber');
+  }
+
   var dirCode = convertDirection(direction);
   var modeCode = convertMode(mode);
 
-  // setPin result handler.
-  var afterSetPin = function(errno) {
-    var err = CreateGpioError('setPin', errno);
+  // Open result handler.
+  var afterOpen = function(errno) {
+    var err = CreateGpioError('open', errno);
 
     // If callback was given, calls back.
     if (util.isFunction(callback)) {
       callback(err);
     }
 
-    // Emits event according to result.
+    // Emit event according to result.
     if (err) {
       self.emit('error', err);
     } else {
-      self.emit('setPin', pinNumber, direction, mode);
+      self.emit('open', pinNumber, direction, mode);
     }
   };
 
-  // Set pin configuration.
-  gpio.setPin(pinNumber, dirCode, modeCode, afterSetPin);
+  // Open pin configuration.
+  gpio.open(pinNumber, dirCode, modeCode, afterOpen);
 };
 
 
-// gpio.writePin(pinNumber, value[, callback])
-GPIO.prototype.writePin = function(pinNumber, value, callback) {
+// gpio.write(pinNumber, value[, callback])
+GPIO.prototype.write = function(pinNumber, value, callback) {
   var self = this;
 
   // Check initialized.
   if (!self._initialized) {
-    throw CreateGpioError('writePin', gpio.kGpioErrNotInitialized);
+    throw CreateGpioError('write', gpio.kGpioErrNotInitialized);
   }
 
   // Check arguments.
   if (!util.isNumber(pinNumber)) {
     throw new TypeError('Bad arguments - pinNumber');
+  }
+
+  if (pinNumber < 0) {
+    throw new Error('Invalid pinNumber');
   }
 
   // Make value boolean.
   value = !!value;
 
-  // After writePin handler.
-  var afterWritePin = function(errno) {
-    var err = CreateGpioError('writePin', errno);
+  // After write handler.
+  var afterWrite = function(errno) {
+    var err = CreateGpioError('write', errno);
 
     // If callback was given, calls back.
     if (util.isFunction(callback)) {
       callback(err);
     }
 
-    // Emits error.
+    // Emit error.
     if (err) {
       self.emit('error', err);
     } else {
-      self.emit('writePin', pinNumber, value);
+      self.emit('write', pinNumber, value);
     }
   };
 
-  // write pin a value.
-  gpio.writePin(pinNumber, value, afterWritePin);
+  // Set pin value.
+  gpio.write(pinNumber, value, afterWrite);
 };
 
 
-// gpio.readPin(pinNumber[, callback])
-GPIO.prototype.readPin = function(pinNumber, callback) {
+// gpio.read(pinNumber[, callback])
+GPIO.prototype.read = function(pinNumber, callback) {
   var self = this;
 
   // Check initialized.
   if (!self._initialized) {
-    throw CreateGpioError('readPin', gpio.kGpioErrNotInitialized);
+    throw CreateGpioError('read', gpio.kGpioErrNotInitialized);
   }
 
   // Check arguments.
@@ -254,45 +262,29 @@ GPIO.prototype.readPin = function(pinNumber, callback) {
     throw new TypeError('Bad arguments - pinNumber');
   }
 
-  // After readPin handler.
-  var afterReadPin = function(errno, value) {
-    var err = CreateGpioError('readPin', errno);
+  if (pinNumber < 0) {
+    throw new Error('Invalid pinNumber');
+  }
 
-    // calls back.
+  // After read handler.
+  var afterRead = function(errno, value) {
+    var err = CreateGpioError('read', errno);
+
+    // Calls back.
     if (util.isFunction(callback)) {
       callback(err, value);
     }
 
-    // Emits error.
+    // Emit error.
     if (err) {
       self.emit('error', err);
     } else {
-      self.emit('readPin', pinNumber, value);
+      self.emit('read', pinNumber, value);
     }
   };
 
   // Read value from a GPIO pin.
-  gpio.readPin(pinNumber, afterReadPin);
-};
-
-
-GPIO.prototype.setPort = function(portNumber, direction, mode, callback) {
-  assert.fail('GPIO.setPort() - not implemented');
-};
-
-
-GPIO.prototype.writePort = function(portNumber, value, callback) {
-  assert.fail('GPIO.writePort() - not implemented');
-};
-
-
-GPIO.prototype.readPort = function(portNumber, callback) {
-  assert.fail('GPIO.readPort() - not implemented');
-};
-
-
-GPIO.prototype.query = function(queryOption, callback) {
-  assert.fail('GPIO.query() - not implemented');
+  gpio.read(pinNumber, afterRead);
 };
 
 

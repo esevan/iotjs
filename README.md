@@ -8,7 +8,7 @@ You can find project details on our [project page](http://samsung.github.io/iotj
 ## Quick Start
 ### Getting the sources
 
-```
+```bash
 git clone https://github.com/Samsung/iotjs.git
 cd iotjs
 ```
@@ -19,6 +19,13 @@ cd iotjs
 tools/build.py
 ```
 
+### How to Test
+
+```bash
+build/x86_64-linux/debug/bin/iotjs tools/check_test.js
+```
+
+
 For Additional information see [Getting Started](docs/Getting-Started.md).
 
 ## Documentation
@@ -26,7 +33,7 @@ For Additional information see [Getting Started](docs/Getting-Started.md).
 - [API Reference](docs/IoT.js-API-reference.md)
 
 ## License
-JerryScript is Open Source software under the [Apache 2.0 license](https://www.apache.org/licenses/LICENSE-2.0). Complete license and copyright information can be found within the code.
+IoT.js is Open Source software under the [Apache 2.0 license](https://www.apache.org/licenses/LICENSE-2.0). Complete license and copyright information can be found within the code.
 
 > Copyright 2015 Samsung Electronics Co., Ltd.
 
@@ -52,5 +59,5 @@ JerryScript is Open Source software under the [Apache 2.0 license](https://www.a
  FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS
  IN THE SOFTWARE.
 
-> This license applies to parts of '*.js' files in '/src/js', implementing node.js 
+> This license applies to parts of '*.js' files in '/src/js', implementing node.js
  compatible API, originating from the https://github.com/node/node repository:
