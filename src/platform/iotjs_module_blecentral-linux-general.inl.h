@@ -1,4 +1,9 @@
-void binding_start_scanning(char *svc_uuid, int allow_duplicates) {
+#ifndef IOTJS_MODULE_BLECENTRAL_LINUX_GENERAL_INL_H
+#define IOTJS_MODULE_BLECENTRAL_LINUX_GENERAL_INL_H
+
+#include "module/iotjs_module_blecentral.h"
+
+void binding_start_scanning(const char *svc_uuid, int allow_duplicates) {
   // TODO: not implemented
 }
 
@@ -6,70 +11,80 @@ void binding_stop_scanning(void) {
   // TODO: not implemented
 }
 
-void binding_connect(char *perip_uuid) {
+void binding_connect(const char *perip_uuid) {
   // TODO: not implemented
 }
 
-void binding_disconnect(char *perip_uuid) {
+void binding_disconnect(const char *perip_uuid) {
   // TODO: not implemented
 }
 
-void binding_discover_service(char *perip_uuid) {
+void binding_discover_service(const char *perip_uuid) {
   // TODO: not implemented
 }
 
-void binding_read_handle(char *perip_uuid, char *handle) {
+void binding_read_handle(const char *perip_uuid, const char *handle) {
   // TODO: not implemented
 }
 
-void binding_write_handle(char *perip_uuid, char *handle, 
-                          char *buffer, int len, int without_response) {
+void binding_write_handle(const char *perip_uuid, const char *handle, 
+                          const char *buffer, int len, int without_response) {
   // TODO: not implemented
 }
 
-void binding_discover_included_services(char *perip_uuid, char *svc_uuid) {
+void binding_discover_included_services(const char *perip_uuid, 
+                                        const char *svc_uuid) {
   // TODO: not implemented
 }
 
-void binding_discover_characteristics(char *perip_uuid, char *svc_uuid) {
+void binding_discover_characteristics(const char *perip_uuid, 
+                                            const char *svc_uuid) {
   // TODO: not implemented
 }
 
-void binding_read(char *perip_uuid, char *svc_uuid, char *char_uuid) {
+void binding_read(const char *perip_uuid, 
+                  const char *svc_uuid, const char *char_uuid) {
   // TODO: not implemented
 }
 
-void binding_write(char *perip_uuid, char *svc_uuid, char *char_uuid,
-                   char *buffer, int len, int without_response) {
+void binding_write(const char *perip_uuid, const char *svc_uuid, 
+                   const char *char_uuid,const char *buffer, 
+                   int len, int without_response) {
   // TODO: not implemented
 }
 
-void binding_broadcast(char *perip_uuid, char *svc_uuid, char *char_uuid, 
-                       int broadcast) {
+void binding_broadcast(const char *perip_uuid, const char *svc_uuid, 
+                       const char *char_uuid, int broadcast) {
   // TODO: not implemented
 }
 
-void binding_notify(char *perip_uuid, char *svc_uuid, char *char_uuid, 
-                    int notify) {
+void binding_notify(const char *perip_uuid, const char *svc_uuid, 
+                    const char *char_uuid, int notify) {
   // TODO: not implemented
 }
 
-void binding_discover_descriptors(char *perip_uuid, 
-                                  char *svc_uuid, 
-                                  char *char_uuid) {
+void binding_discover_descriptors(const char *perip_uuid, 
+                                  const char *svc_uuid, 
+                                  const char *char_uuid) {
   // TODO: not implemented
 }
 
-void binding_read_value(char *perip_uuid, char *svc_uuid,
-                        char *char_uuid, char *desc_uuid) {
+void binding_read_value(const char *perip_uuid, const char *svc_uuid,
+                        const char *char_uuid, const char *desc_uuid) {
   // TODO: not implemented
 }
 
-void binding_write_value(char *perip_uuid, char *svc_uuid,
-                         char *char_uuid, char *desc_uuid,
-                         char *buffer, int len) {
+void binding_write_value(const char *perip_uuid, const char *svc_uuid,
+                         const char *char_uuid, const char *desc_uuid,
+                         const char *buffer, int len) {
   // TODO: not implemented
 }
 
 void binding_value(void) {
 }
+
+void binding_listen(void) {
+
+}
+
+#endif
