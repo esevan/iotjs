@@ -15,10 +15,10 @@
  */
 
 #include "iotjs_module_blecentral.h"
-
 #include "iotjs_module_buffer.h"
 
 static void iotjs_blecentral_destroy(iotjs_bufferwrap_t* bufferwrap) {
+  IOTJS_VALIDATED_STRUCT_DESTRUCTOR(iotjs_bufferwrap_t, bufferwrap);
   iotjs_jobjectwrap_destroy(&_this->jobjectwrap);
   IOTJS_RELEASE(bufferwrap);
 }
@@ -33,10 +33,10 @@ iotjs_blecentral_t* iotjs_blecentral_create(const iotjs_jval_t* jblecentral) {
 }
 
 const iotjs_jval_t* iotjs_blecentral_get_jblecentral() {
-  return iotjs_module_get(MODULE_BLE_CENTRAL);
+  return iotjs_module_get(MODULE_BLECENTRAL);
 }
 
-iotjs_jblecentral-t* iotjs_blecentral_get_instance() {
+iotjs_blecentral_t* iotjs_blecentral_get_instance() {
   const iotjs_jval_t* jblecentral = iotjs_blecentral_get_jblecentral();
   iotjs_jobjectwrap_t* jobjectwrap =
       iotjs_jobjectwrap_from_jobject(jblecentral);
@@ -207,7 +207,7 @@ JHANDLER_FUNCTION(Notify) {
 }
 
 //peripheralUuid, serviceUuid, characteristciUuid
-HANDLER_FUNCTION(DiscoverDescriptors) {
+JHANDLER_FUNCTION(DiscoverDescriptors) {
   JHANDLER_CHECK_ARGS(3, string, string, string);
 
   iotjs_string_t jperip_uuid = JHANDLER_GET_ARG(0, string);
@@ -262,7 +262,7 @@ JHANDLER_FUNCTION(Listen) {
   binding_listen();
 }
 
-iotjs_jval_t InitBleCentral() {
+iotjs_jval_t InitBlecentral() {
   iotjs_jval_t jblecentral = iotjs_jval_create_object();
 
   //Ble-central
@@ -272,13 +272,13 @@ iotjs_jval_t InitBleCentral() {
   //Peripheral
   iotjs_jval_set_method(&jblecentral, "connect", Connect);
   iotjs_jval_set_method(&jblecentral, "disconnect", Disconnect);
-  iotjs_jval_set_method(&jblecentral, "discoverService", DiscoverService);
+  iotjs_jval_set_method(&jblecentral, "discoverServices", DiscoverServices);
   iotjs_jval_set_method(&jblecentral, "readHandle", ReadHandle);
   iotjs_jval_set_method(&jblecentral, "writeHandle", WriteHandle);
 
   //Service
-  iotjs_jval_set_method(&jblecentral, "discoverIncludedService",
-                        DiscoverIncludedService);
+  iotjs_jval_set_method(&jblecentral, "discoverIncludedServices",
+                        DiscoverIncludedServices);
   iotjs_jval_set_method(&jblecentral, "discoverCharacteristics",
                         DiscoverCharacteristics);
 

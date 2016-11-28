@@ -43,7 +43,7 @@ typedef enum {
 typedef enum {
   kBleCentralErrNone = 0,
   kBleCentralErrFail = -1,
-}
+} BleCentralErr;
 
 typedef struct {
   BleCentralOp op;
@@ -51,7 +51,7 @@ typedef struct {
 } iotjs_blecentral_reqdata_t;
 
 typedef struct {
-  uvwork_t req;
+  uv_work_t req;
   iotjs_blecentral_reqdata_t req_data;
 } IOTJS_VALIDATED_STRUCT(iotjs_blecentral_reqwrap_t);
 
@@ -62,5 +62,37 @@ typedef struct {
 iotjs_blecentral_t* iotjs_blecentral_create(const iotjs_jval_t* jble_central);
 const iotjs_jval_t* iotjs_blecentral_get_jblecentral();
 iotjs_blecentral_t* iotjs_blecentral_get_instance();
+
+void binding_start_scanning(const char *svc_uuid, int allow_duplicates);
+void binding_stop_scanning(void);
+void binding_connect(const char *perip_uuid);
+void binding_disconnect(const char *perip_uuid);
+void binding_discover_service(const char *perip_uuid);
+void binding_read_handle(const char *perip_uuid, const char *handle);
+void binding_write_handle(const char *perip_uuid, const char *handle, 
+                          const char *buffer, int len, int without_response);
+void binding_discover_included_services(const char *perip_uuid, 
+                                        const char *svc_uuid);
+void binding_discover_characteristics(const char *perip_uuid, 
+                                            const char *svc_uuid);
+void binding_read(const char *perip_uuid, 
+                  const char *svc_uuid, const char *char_uuid);
+void binding_write(const char *perip_uuid, const char *svc_uuid, 
+                   const char *char_uuid,const char *buffer, 
+                   int len, int without_response);
+void binding_broadcast(const char *perip_uuid, const char *svc_uuid, 
+                       const char *char_uuid, int broadcast);
+void binding_notify(const char *perip_uuid, const char *svc_uuid, 
+                    const char *char_uuid, int notify);
+void binding_discover_descriptors(const char *perip_uuid, 
+                                  const char *svc_uuid, 
+                                  const char *char_uuid);
+void binding_read_value(const char *perip_uuid, const char *svc_uuid,
+                        const char *char_uuid, const char *desc_uuid);
+void binding_write_value(const char *perip_uuid, const char *svc_uuid,
+                         const char *char_uuid, const char *desc_uuid,
+                         const char *buffer, int len);
+void binding_value(void);
+void binding_listen(void);
 
 #endif /* IOTJS_MODULE_BLECENTRAL_H */
