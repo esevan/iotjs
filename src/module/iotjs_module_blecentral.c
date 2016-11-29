@@ -1,4 +1,4 @@
-/* Copyright 2016 Samsung Electronics Co., Ltd.
+/* Copyright 2016 Eunsoo Park, <esevan.park@gmail.com>
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
